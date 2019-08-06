@@ -7,7 +7,7 @@ description = "Convert Poetry.lock to requirements.txt"
 repository = "https://github.com/sbdchd/poetry-to-requirements"
 documentation = "https://github.com/sbdchd/poetry-to-requirements/blob/master/README.md"
 readme = "README.md"
-license = "BSD-2"
+license = "BSD-2-Clause"
 
 [dependencies]
 toml = "0.5.1"
