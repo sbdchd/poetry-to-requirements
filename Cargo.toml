@@ -1,0 +1,15 @@
+[package]
+name = "poetry-to-requirements"
+version = "0.1.0"
+authors = ["Steve Dignam <steve@dignam.xyz>"]
+edition = "2018"
+description = "Convert Poetry.lock to requirements.txt"
+repository = "https://github.com/sbdchd/poetry-to-requirements"
+documentation = "https://github.com/sbdchd/poetry-to-requirements/blob/master/README.md"
+readme = "README.md"
+license = "BSD-2"
+
+[dependencies]
+toml = "0.5.1"
+serde = { version = "1.0", features = ["derive"] }
+structopt = "0.2.18"
