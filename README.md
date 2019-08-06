@@ -2,6 +2,11 @@
 
 > Convert a `Poetry.lock` file to a `requirements.txt` file
 
+## Install
+
+```
+cargo install poetry-to-requirements
+```
 
 ## Usage
 
