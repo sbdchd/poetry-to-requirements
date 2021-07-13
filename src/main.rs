@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::process;
 use structopt::StructOpt;
 use toml;
+use regex::Regex;
 
 #[derive(Deserialize, Debug, PartialEq)]
 struct Package {
@@ -21,11 +22,53 @@ struct LockFile {
     package: Vec<Package>,
 }
 
+#[derive(Deserialize, Debug, PartialEq)]
+struct Spec {
+    op: String,
+    ver: String,
+}
+
+use std::iter::Iterator;
+
+fn parse_spec(spectxts: &str) -> Result<Vec<Spec>, String> {
+    Ok(
+        spectxts
+        .split(",")
+        .map(|item| {
+            let spectxt = item.trim();
+
+            let re = Regex::new(r"[^!=<>~]").unwrap();
+            let op = re.replace_all(spectxt, "").to_string();
+
+            let re = Regex::new(r"[^0-9\.\*]").unwrap();
+            let ver = re.replace_all(spectxt, "").to_string();
+
+            Spec { op, ver }
+        })
+        .collect()
+    )
+}
+
 impl LockFile {
-    fn to_requirements(&self) -> String {
+    fn to_requirements(&self, dev_mode: bool) -> String {
         self.package
             .iter()
-            .map(|p| format!("{}=={}", p.name, p.version))
+            .filter(|p| if !dev_mode {
+                p.category == "main"
+            } else {
+                vec![ "main", "dev" ].contains(&p.category.as_str())
+            })
+            .map(|p| {
+                let mut depline = format!("{}=={}", p.name, p.version);
+                if p.python_versions != "*" {
+                    let pyvers: String = parse_spec(p.python_versions.as_str()).unwrap()
+                    .iter()
+                    .map(|spec| format!("python_version {} \"{}\"", spec.op, spec.ver))
+                    .fold("".to_string(), |acc, pv| if acc.is_empty() { pv } else { format!("{} and {}", acc, pv) });
+                    depline = format!("{}; {}", depline, pyvers);
+                }
+                depline
+            })
             .collect::<Vec<String>>()
             .join("\n")
     }
@@ -41,6 +84,11 @@ fn parse_lockfile(text: &str) -> Result<LockFile, ()> {
     about = "Convert Poetry.lock to requirements.txt"
 )]
 struct Opt {
+    #[structopt(
+        short = "-d", // method with no arguments - always magical
+        long = "--dev", // method with one argument
+    )]
+    is_dev: bool,
     /// path to Poetry.lock
     #[structopt(parse(from_os_str))]
     path: PathBuf,
@@ -53,7 +101,7 @@ fn main() {
         .map_err(|_| ())
         .and_then(|text| parse_lockfile(&text))
     {
-        Ok(l) => println!("{}", l.to_requirements()),
+        Ok(l) => println!("{}", l.to_requirements(opt.is_dev)),
         Err(_) => {
             eprintln!("problem parsing lockfile");
             process::exit(1);
