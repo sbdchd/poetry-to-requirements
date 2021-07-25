@@ -30,23 +30,21 @@ struct Spec {
 
 use std::iter::Iterator;
 
-fn parse_spec(spectxts: &str) -> Result<Vec<Spec>, String> {
-    Ok(
-        spectxts
-        .split(",")
-        .map(|item| {
-            let spectxt = item.trim();
+fn parse_spec(spectxts: &str) -> Vec<Spec> {
+    spectxts
+    .split(",")
+    .map(|item| {
+        let spectxt = item.trim();
 
-            let re = Regex::new(r"[^!=<>~]").unwrap();
-            let op = re.replace_all(spectxt, "").to_string();
+        let re = Regex::new(r"[^!=<>~]").unwrap();
+        let op = re.replace_all(spectxt, "").to_string();
 
-            let re = Regex::new(r"[^0-9\.\*]").unwrap();
-            let ver = re.replace_all(spectxt, "").to_string();
+        let re = Regex::new(r"[^0-9\.\*]").unwrap();
+        let ver = re.replace_all(spectxt, "").to_string();
 
-            Spec { op, ver }
-        })
-        .collect()
-    )
+        Spec { op, ver }
+    })
+    .collect()
 }
 
 impl LockFile {
@@ -61,7 +59,7 @@ impl LockFile {
             .map(|p| {
                 let mut depline = format!("{}=={}", p.name, p.version);
                 if p.python_versions != "*" {
-                    let pyvers: String = parse_spec(p.python_versions.as_str()).unwrap()
+                    let pyvers: String = parse_spec(p.python_versions.as_str())
                     .iter()
                     .map(|spec| format!("python_version {} \"{}\"", spec.op, spec.ver))
                     .fold("".to_string(), |acc, pv| if acc.is_empty() { pv } else { format!("{} and {}", acc, pv) });
